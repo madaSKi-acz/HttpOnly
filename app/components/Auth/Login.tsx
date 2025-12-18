@@ -4,12 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import * as yup from "yup";
 import api from "@/app/services/api";
-import type { AxiosError } from "axios"; // ← Import AxiosError type
+import type { AxiosError } from "axios";
 
-// Define expected error response from your backend (adjust if needed)
 interface ApiErrorResponse {
   message?: string;
-  error?: string;
 }
 
 const loginSchema = yup.object({
@@ -23,8 +21,8 @@ const loginSchema = yup.object({
 export default function LoginForm() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@gmail.com");
+  const [password, setPassword] = useState("123");
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
@@ -35,33 +33,33 @@ export default function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setIsLoading(true);
 
     try {
+      // 1. Client-side validation
       await loginSchema.validate({ email, password }, { abortEarly: false });
 
-      setIsLoading(true);
+      // 2. Get CSRF cookie first (sets XSRF-TOKEN + starts session if needed)
+      const scsrf = await api.get("/api/sanctum/csrf-cookie");
+      console.log(scsrf, "the csrf")
 
-      const response = await api.post("/login", {
+      // 3. Send login request
+      await api.post("/api/login", {
         email,
         password,
       });
 
-      console.log(response, "login response data");
+      // Success! No token to save – HttpOnly session cookie is now set by Laravel
+      console.log("Login successful – session cookie set");
 
-      const { accessToken } = response.data;
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("accessToken", accessToken);
-      }
-
-      document.cookie = "auth=true; path=/; max-age=86400";
-
+      // Small delay for better UX (optional)
       await new Promise((resolve) => setTimeout(resolve, 300));
 
+      // Redirect to protected page
       router.push("/users");
     } catch (err) {
-      // Properly typed error handling
       if (err instanceof yup.ValidationError) {
+        // Yup validation errors
         const validationErrors: { email?: string; password?: string } = {};
         err.inner.forEach((error) => {
           if (error.path) {
@@ -69,27 +67,23 @@ export default function LoginForm() {
           }
         });
         setErrors(validationErrors);
-      } 
-      else if (err && (err as AxiosError<ApiErrorResponse>).response) {
-        // Axios API error
+      } else if ((err as AxiosError<ApiErrorResponse>)?.response) {
+        // Laravel API error (e.g., 401 Invalid credentials)
         const axiosError = err as AxiosError<ApiErrorResponse>;
         const message =
           axiosError.response?.data?.message ||
-          axiosError.response?.data?.error ||
           "Invalid email or password. Please try again.";
 
         setErrors({ server: message });
-      } 
-      else {
-        // Network or unexpected errors
-        setErrors({ server: "Network error. Please check your connection." });
+      } else {
+        // Network error or something unexpected
+        setErrors({ server: "Unable to connect. Check your internet connection." });
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ... rest of your JSX remains exactly the same
   return (
     <form
       onSubmit={handleLogin}
@@ -140,7 +134,9 @@ export default function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
         />
-        {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
+        {errors.password && (
+          <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+        )}
       </div>
 
       <button
