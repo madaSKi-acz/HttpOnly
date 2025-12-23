@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/app/services/api";
+import Loading from "@/app/components/Loading";
 
 interface User {
   id: number;
@@ -32,11 +33,7 @@ export default function UsersPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-500">
-        Loading users...
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
@@ -70,7 +67,7 @@ export default function UsersPage() {
             {users.map((user) => (
               <div
                 key={user.id}
-                className="rounded-2xl border bg-white p-6"
+                className="rounded-2xl border bg-white p-6 shadow-lg shadow-zinc-900/5 transition hover:shadow-xl"
               >
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white font-bold">
                   {user.name.charAt(0)}
@@ -79,7 +76,9 @@ export default function UsersPage() {
                 <h3 className="text-xl font-bold">{user.name}</h3>
 
                 <p className="mt-2 text-sm text-zinc-600">{user.email}</p>
-                <p className="text-sm text-zinc-600">{user.phone ?? "—"}</p>
+                <p className="text-sm text-zinc-600">
+                  {user.phone ?? "—"}
+                </p>
               </div>
             ))}
           </div>
