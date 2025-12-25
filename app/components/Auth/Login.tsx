@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import * as yup from "yup";
-import api from "@/app/services/api";
+import api from "@/app/lib/api";
 import type { AxiosError } from "axios";
 
 interface ApiErrorResponse {
@@ -40,8 +40,7 @@ export default function LoginForm() {
       await loginSchema.validate({ email, password }, { abortEarly: false });
 
       // 2. Get CSRF cookie first (sets XSRF-TOKEN + starts session if needed)
-      const scsrf = await api.get("/api/sanctum/csrf-cookie");
-      console.log(scsrf, "the csrf")
+      await api.get("/api/sanctum/csrf-cookie");
 
       // 3. Send login request
       await api.post("/api/login", {
@@ -49,11 +48,9 @@ export default function LoginForm() {
         password,
       });
 
-      // Success! No token to save – HttpOnly session cookie is now set by Laravel
-      console.log("Login successful – session cookie set");
-
       // Small delay for better UX (optional)
       await new Promise((resolve) => setTimeout(resolve, 300));
+      
 
       // Redirect to protected page
       router.push("/users");

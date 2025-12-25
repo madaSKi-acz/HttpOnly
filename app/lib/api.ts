@@ -18,14 +18,8 @@ const api: AxiosInstance = axios.create({
 
 // --- REQUEST INTERCEPTOR ---
 api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // You can log the method, URL, and data/params
-    console.log(config, "cc req");
-    
-    // This is also where you would typically inject an Auth token
-    // const token = localStorage.getItem('token');
-    // if (token) config.headers.Authorization = `Bearer ${token}`;
-
+  async (config: InternalAxiosRequestConfig) => {
+   
     return config;
   },
   (error: AxiosError) => {
@@ -36,21 +30,15 @@ api.interceptors.request.use(
 // --- RESPONSE INTERCEPTOR ---
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log(
-      `%c [Response] ${response.status} <- ${response.config.url}`, 
-      'color: #28a745; font-weight: bold;', 
-      response.data
-    );
+
     return response;
   },
   (error: AxiosError) => {
     if (error.response) {
       const { status } = error.response;
-      // ... your existing switch logic
       switch (status) {
         case 401: console.warn('Unauthorized'); break;
         case 419: console.warn('CSRF mismatch'); break;
-        // ... rest of cases
       }
     }
     return Promise.reject(error);
