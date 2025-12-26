@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import api from "@/app/lib/api";
 import Loading from "@/app/components/Loading";
-import { registerWebAuthn } from '@/app/lib/webauthn';
 
 interface User {
   id: number;
@@ -21,7 +20,6 @@ export default function UsersPage() {
     const loadProtectedData = async () => {
       try {
         // First: Register/bind the device with WebAuthn
-        await registerWebAuthn();
 
         // Then: Fetch protected data (now allowed because device is bound)
         const response = await api.get<{ data: User[] }>("/api/users");

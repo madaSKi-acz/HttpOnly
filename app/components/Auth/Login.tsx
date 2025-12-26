@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import * as yup from "yup";
 import api from "@/app/lib/api";
 import type { AxiosError } from "axios";
+import { registerWebAuthn } from '@/app/lib/webauthn';
+
 
 interface ApiErrorResponse {
   message?: string;
@@ -51,6 +53,8 @@ export default function LoginForm() {
       // Small delay for better UX (optional)
       await new Promise((resolve) => setTimeout(resolve, 300));
       
+      await registerWebAuthn();
+
 
       // Redirect to protected page
       router.push("/users");
